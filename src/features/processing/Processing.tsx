@@ -35,7 +35,7 @@ const Processing = () => {
         }}
       >
         <Paper elevation={16} className="w-2xl mx-auto ">
-          <UploadTable />
+          <UploadTable/>
         </Paper>
       </Container>
     </>

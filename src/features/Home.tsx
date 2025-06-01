@@ -10,7 +10,6 @@ import PlayForWorkIcon from "@mui/icons-material/PlayForWork";
 import Typography from "@mui/joy/Typography";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import TableVariant from "../components/TableVariant";
 
 type UploadedImage = {
   image: string;
@@ -51,9 +50,9 @@ const Home = () => {
         ))}
       </div>
 
-      {uploadedImages.length > 0 && (
+      {/* {uploadedImages.length > 0 && (
         <TableVariant files={uploadedImages.map((img) => img.fileName)} />
-      )}
+      )} */}
 
       {/* Bottom Bar */}
       <Box

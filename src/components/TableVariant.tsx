@@ -1,23 +1,15 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // <-- Step 1
+
 import Table from "@mui/joy/Table";
 import UploadStatus from "./UploadStatus";
+
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import Button from "@mui/joy/Button";
 import CircularProgress from "@mui/joy/CircularProgress";
-
-const files = [
-  "Living Room.jpg",
-  "Bedroom.jpg",
-  "Kitchen.jpg",
-  "Bathroom.jpg",
-  "Living Room.jpg",
-  "Bedroom.jpg",
-  "Kitchen.jpg",
-  "Bathroom.jpg",
-];
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 
-// const files = ["Living Room.jpg", "Bedroom.jpg", "Kitchen.jpg", "Bathroom.jpg"];
+const files = ["Living Room.jpg", "Bedroom.jpg", "Kitchen.jpg", "Bathroom.jpg"];
 
 export default function UploadTable() {
   const [completedStatuses, setCompletedStatuses] = useState<boolean[]>(
@@ -26,7 +18,8 @@ export default function UploadTable() {
   const [finalLoading, setFinalLoading] = useState(false);
   const [finalDone, setFinalDone] = useState(false);
 
-  // Called by each UploadStatus when it finishes
+  const navigate = useNavigate(); // <-- Step 2
+
   const handleComplete = (index: number) => {
     setCompletedStatuses((prev) => {
       const updated = [...prev];
@@ -35,20 +28,23 @@ export default function UploadTable() {
     });
   };
 
-  // Watch when all file uploads are done
   useEffect(() => {
     const allCompleted = completedStatuses.every((status) => status);
     if (allCompleted && completedStatuses.length > 0) {
-      // Start final loading
       setFinalLoading(true);
       const timer = setTimeout(() => {
         setFinalDone(true);
         setFinalLoading(false);
-      }, 3000); // 3 seconds final loading
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [completedStatuses]);
+
+  // <-- Step 3
+  const handleVrClick = () => {
+    navigate("/viewer");
+  };
 
   return (
     <div className="mt-7">
@@ -68,7 +64,7 @@ export default function UploadTable() {
                   index={index}
                   delay={3000}
                   onComplete={() => handleComplete(index)}
-                />{" "}
+                />
               </td>
             </tr>
           ))}
@@ -84,10 +80,10 @@ export default function UploadTable() {
                   </span>
                 </div>
               )}
-
               {finalDone && (
                 <Button
                   sx={{ m: 1 }}
+                  onClick={handleVrClick}
                   endDecorator={<ViewInArIcon />}
                   color="success"
                   variant="solid"
