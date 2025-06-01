@@ -3,7 +3,7 @@ import { Typography } from "@mui/joy";
 import { Back } from "../../components/Back";
 import Container from "@mui/material/Container";
 import Navbar from "../../components/Navbar";
-import TableVariant from "../../components/TableVariant";
+import UploadTable from "../../components/TableVariant";
 import { Paper } from "@mui/material";
 
 // import UploadStatus from "../../components/UploadStatus";
@@ -35,7 +35,7 @@ const Processing = () => {
         }}
       >
         <Paper elevation={16} className="w-2xl mx-auto ">
-          <TableVariant />
+          <UploadTable />
         </Paper>
       </Container>
     </>

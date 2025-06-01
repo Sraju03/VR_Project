@@ -1,48 +1,131 @@
-import BottomNav from "../components/BottomNav";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import SceneConfigure from "../components/SceneConfigure";
 import Upload from "../components/Upload";
 import VrCard from "../components/VrCard";
-import image1 from "../Assets/Image1.jpg";
-import image2 from "../Assets/Image 2.jpg";
-import image3 from "../Assets/Image 3.jpg";
-import image4 from "../Assets/Image 4.jpg";
-import image5 from "../Assets/Image 5.jpg";
-import image6 from "../Assets/Image 6.jpg";
+import Box from "@mui/material/Box";
+import Button from "@mui/joy/Button";
+import PlayForWorkIcon from "@mui/icons-material/PlayForWork";
+import Typography from "@mui/joy/Typography";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import TableVariant from "../components/TableVariant";
+
+type UploadedImage = {
+  image: string;
+  fileName: string;
+  chipLabel: string;
+};
 
 const Home = () => {
-  const images = [
-    { src: image1, label: "Living Room", name: "Image1.jpg" },
-    { src: image2, label: "Kitchen", name: "Image 2.jpg" },
-    { src: image3, label: "Bedroom", name: "Image 3.jpg" },
-    { src: image4, label: "Office", name: "Image 4.jpg" },
-    { src: image5, label: "Terrace", name: "Image 5.jpg" },
-    { src: image6, label: "Garden", name: "Image 6.jpg" },
-    { src: image1, label: "Living Room", name: "Image1.jpg" },
-    { src: image2, label: "Kitchen", name: "Image 2.jpg" },
-    
-  ];
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const navigate = useNavigate();
+
+  const handleUpload = (newImage: UploadedImage) => {
+    setUploadedImages((prev) => [...prev, newImage]);
+  };
+
+  const handleGenerateClick = () => {
+    navigate("/processing");
+  };
 
   return (
-    <>
-      <div>
-        <Navbar />
-        <SceneConfigure />
-        <Upload />
-        {/* <VrCard /> */}
-        <div className="flex flex-wrap gap-6 justify-center p-8">
-          {images.map((img, index) => (
-            <VrCard
-              key={index}
-              imageUrl={img.src}
-              chipLabel={img.label}
-              filename={img.name}
-            />
-          ))}
-        </div>
-        <BottomNav />
+    <div>
+      <Navbar />
+      <SceneConfigure />
+      <Upload onUpload={handleUpload} />
+
+      {/* Display uploaded VrCards */}
+      <div className="flex flex-wrap gap-6 justify-center p-8">
+        {uploadedImages.map((img, idx) => (
+          <VrCard
+            key={idx}
+            image={img.image}
+            fileName={img.fileName}
+            chipLabel={img.chipLabel}
+            onDelete={() => {
+              setUploadedImages((prev) => prev.filter((_, i) => i !== idx));
+            }}
+          />
+        ))}
       </div>
-    </>
+
+      {uploadedImages.length > 0 && (
+        <TableVariant files={uploadedImages.map((img) => img.fileName)} />
+      )}
+
+      {/* Bottom Bar */}
+      <Box
+        sx={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          zIndex: 1000,
+          backgroundColor: "#fff",
+          borderTop: "1px solid #ccc",
+          display: "flex",
+          justifyContent: "space-between",
+          padding: "1.5% 5%",
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <Typography
+            level="body-sm"
+            textColor="text.secondary"
+            sx={{ fontWeight: "md" }}
+          >
+            <PlayForWorkIcon />
+            {uploadedImages.length} File{uploadedImages.length !== 1 && "s"}{" "}
+            Uploaded
+          </Typography>
+        </div>
+
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Button
+            component="label"
+            role={undefined}
+            tabIndex={-1}
+            variant="outlined"
+            color="neutral"
+            sx={{ backgroundColor: "#004b93", color: "#fff" }}
+          >
+            <UploadFileIcon className="mr-1.5" />
+            Upload a file
+            <input
+              type="file"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  handleUpload({
+                    image: reader.result as string,
+                    fileName: file.name,
+                    chipLabel: file.type.includes("image") ? "Image" : "Video",
+                  });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </Button>
+
+          <Button
+            onClick={handleGenerateClick}
+            variant="outlined"
+            color="neutral"
+            sx={{ backgroundColor: "#ffb800" }}
+          >
+            <AutoAwesomeIcon className="mr-1.5" />
+            Generate
+          </Button>
+        </div>
+      </Box>
+    </div>
   );
 };
 
