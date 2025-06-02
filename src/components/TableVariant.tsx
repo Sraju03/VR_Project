@@ -9,7 +9,7 @@ import Button from "@mui/joy/Button";
 import CircularProgress from "@mui/joy/CircularProgress";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 
-const files = ["Living Room.jpg", "Bedroom.jpg", "Kitchen.jpg", "Bathroom.jpg"];
+const files = ["Living Room.jpg", "Bedroom.jpg"];
 
 export default function UploadTable() {
   const [completedStatuses, setCompletedStatuses] = useState<boolean[]>(

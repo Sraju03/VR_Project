@@ -1,6 +1,7 @@
 import { Typography } from "@mui/joy";
 import Navbar from "../../components/Navbar";
-import { VrSceneBox } from "../../components/VrSceneBox";
+import VrSceneBox from "../../components/VrSceneBox";
+// import { VrSceneBox } from "../../components/VrSceneBox";
 
 const Viewer = () => {
   return (

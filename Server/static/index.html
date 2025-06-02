@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>360-Degree VR Image Viewer with Upload</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    a-scene {
+      width: 100vw;
+      height: 70vh;
+      max-width: 1200px;
+      margin-bottom: 20px;
+    }
+    #upload-section, #image-selector {
+      text-align: center;
+      margin: 20px;
+    }
+    button, input[type="submit"] {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover, input[type="submit"]:hover {
+      background-color: #005ba1;
+    }
+    input[type="file"] {
+      margin: 10px;
+    }
+    @media (max-width: 600px) {
+      a-scene {
+        height: 50vh;
+      }
+      button, input[type="submit"] {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- A-Frame scene with rotating camera rig -->
+  <a-scene id="panorama" embedded vr-mode-ui="enabled: true">
+    <a-entity id="cameraRig" rotation="0 0 0">
+      <a-camera wasd-controls-enabled="false" look-controls="enabled: true"></a-camera>
+    </a-entity>
+    <a-sky id="sky" src="" rotation="0 -90 0"></a-sky>
+  </a-scene>
+
+  <!-- Upload section -->
+  <div id="upload-section">
+    <h2>Upload Images to Create VR Panorama</h2>
+    <form id="upload-form" enctype="multipart/form-data">
+      <input type="file" id="image-upload" name="images" accept="image/jpeg,image/png,image/webp" multiple>
+      <input type="submit" value="Create and Display VR Panorama">
+    </form>
+  </div>
+
+  <!-- Image selector -->
+  <div id="image-selector">
+    <h2>Previously Created Panoramas</h2>
+    <!-- Buttons added dynamically -->
+  </div>
+
+  <script>
+    // Load image into sky
+    function loadPanorama(path) {
+      console.log('Loading panorama:', path);
+      const sky = document.getElementById('sky');
+      sky.setAttribute('src', path);
+    }
+
+    // Handle image uploads
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      const files = document.getElementById('image-upload').files;
+      if (files.length < 1) {
+        alert('Please select at least one image.');
+        return;
+      }
+
+      for (let file of files) {
+        formData.append('images', file);
+      }
+
+      try {
+        const panorama = document.getElementById('panorama');
+        panorama.classList.add('loading');
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        panorama.classList.remove('loading');
+
+        if (!response.ok) {
+          let errorText;
+          try {
+            errorText = await response.json();
+            errorText = errorText.detail || errorText;
+          } catch {
+            errorText = await response.text();
+          }
+          throw new Error(`Server responded with ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          loadPanorama(result.panorama_path);
+          const selector = document.getElementById('image-selector');
+          const button = document.createElement('button');
+          button.textContent = `Panorama ${selector.children.length - 1}`;
+          button.onclick = () => {
+            loadPanorama(result.panorama_path);
+            console.log(`Switched to: ${result.panorama_path}`);
+          };
+          selector.appendChild(button);
+        } else {
+          alert('Error: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert(`Upload failed: ${error.message}`);
+      }
+    });
+
+    // Add demo panoramas (optional)
+    const images = ['/results/normalized_image1.webp'];
+    const selector = document.getElementById('image-selector');
+    images.forEach((image, index) => {
+      const button = document.createElement('button');
+      button.textContent = `Image ${index + 1}`;
+      button.onclick = () => {
+        loadPanorama(image);
+        console.log(`Switched to: ${image}`);
+      };
+      selector.appendChild(button);
+    });
+
+    // Auto-rotate the camera rig
+    function autoRotateCamera() {
+      const rig = document.getElementById('cameraRig');
+      let angle = 0;
+
+      function rotate() {
+        angle += 0.1; // Adjust speed here (smaller is slower)
+        rig.setAttribute('rotation', `0 ${angle} 0`);
+        requestAnimationFrame(rotate);
+      }
+
+      rotate();
+    }
+
+    window.addEventListener('load', () => {
+      autoRotateCamera();
+    });
+  </script>
+</body>
+</html>

@@ -14,6 +14,7 @@ interface UploadProps {
 
 const Upload = ({ onUpload }: UploadProps) => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    debugger
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -54,7 +55,7 @@ const Upload = ({ onUpload }: UploadProps) => {
             >
               <UploadFileIcon className="mr-1.5" />
               Upload a file
-              <input type="file" hidden onChange={handleFileChange} />
+              <input type="file"  multiple hidden onChange={handleFileChange} />
             </Button>
           </div>
         </Box>

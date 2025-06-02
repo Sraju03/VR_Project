@@ -12,7 +12,7 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 type UploadedImage = {
-  image: string;
+  image: string; // base64 string
   fileName: string;
   chipLabel: string;
 };
@@ -21,12 +21,60 @@ const Home = () => {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const navigate = useNavigate();
 
+  // Convert base64 to Blob
+  const base64ToBlob = (base64: string, contentType: string) => {
+    const byteCharacters = atob(base64.split(",")[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: contentType });
+  };
+
   const handleUpload = (newImage: UploadedImage) => {
     setUploadedImages((prev) => [...prev, newImage]);
   };
 
-  const handleGenerateClick = () => {
-    navigate("/processing");
+  const handleGenerateClick = async () => {
+    if (uploadedImages.length === 0) {
+      alert("Please upload at least one image before generating.");
+      return;
+    }
+
+    // Prepare FormData to send images
+    const formData = new FormData();
+    uploadedImages.forEach((img, index) => {
+      const contentType =
+        img.chipLabel === "Image" ? "image/jpeg" : "video/mp4"; // Adjust based on chipLabel
+      const blob = base64ToBlob(img.image, contentType);
+      formData.append("images", blob, img.fileName);
+    });
+
+    try {
+      // Send images to the backend /upload endpoint
+      const response = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload images");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Navigate to /processing with the panorama path
+        navigate("/processing", {
+          state: { panoramaPath: result.panorama_path },
+        });
+      } else {
+        throw new Error("Backend processing failed");
+      }
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      alert("Failed to process images. Please try again.");
+    }
   };
 
   return (
@@ -49,10 +97,6 @@ const Home = () => {
           />
         ))}
       </div>
-
-      {/* {uploadedImages.length > 0 && (
-        <TableVariant files={uploadedImages.map((img) => img.fileName)} />
-      )} */}
 
       {/* Bottom Bar */}
       <Box
@@ -118,6 +162,7 @@ const Home = () => {
             variant="outlined"
             color="neutral"
             sx={{ backgroundColor: "#ffb800" }}
+            disabled={uploadedImages.length === 0} // Disable if no images
           >
             <AutoAwesomeIcon className="mr-1.5" />
             Generate
