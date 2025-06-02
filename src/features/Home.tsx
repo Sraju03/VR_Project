@@ -123,7 +123,7 @@ const Home = () => {
             disabled={uploadedImages.length === 0}
           >
             <AutoAwesomeIcon className="mr-1.5" />
-            Generate
+            Generated
           </Button>
         </div>
       </Box>
