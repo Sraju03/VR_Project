@@ -21,6 +21,12 @@ function ImageUpload() {
     }
   };
 
+  // Define the onDelete function
+  const handleDelete = () => {
+    setBase64Image(""); // Clear the image
+    setFileName(""); // Clear the file name
+  };
+
   return (
     <div className="p-4">
       <input
@@ -30,7 +36,12 @@ function ImageUpload() {
         className="mb-4"
       />
       {base64Image && (
-        <VrCard image={base64Image} fileName={fileName} chipLabel="Uploaded" />
+        <VrCard
+          image={base64Image}
+          fileName={fileName}
+          chipLabel="Uploaded"
+          onDelete={handleDelete} // Pass the onDelete function
+        />
       )}
     </div>
   );

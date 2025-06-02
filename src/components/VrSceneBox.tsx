@@ -1,269 +1,252 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Container from "@mui/material/Container";
 import Chip from "@mui/joy/Chip";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
-import { Box, Button, Grid, ListItem } from "@mui/joy";
-import HeadsetMicIcon from "@mui/icons-material/HeadsetMic";
+import { Box, Button } from "@mui/joy";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
-import RoofingIcon from "@mui/icons-material/Roofing";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import PauseIcon from "@mui/icons-material/Pause";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ThreeDRotationIcon from "@mui/icons-material/ThreeDRotation";
 
-// Define the props type
+interface AFrameScene extends HTMLElement {
+  is: (state: string) => boolean;
+  enterVR: () => void;
+  exitVR: () => void;
+}
+
+declare global {
+  interface Window {
+    AFRAME: any;
+  }
+}
+
 type VrSceneBoxProps = {
-  panoramaPath?: string; // Optional string prop
+  panoramaPath?: string;
 };
 
-const VrSceneBox = ({ panoramaPath: initialPanoramaPath }: VrSceneBoxProps) => {
-  const [panoramaPath, setPanoramaPath] = useState<string | undefined>(
-    initialPanoramaPath
-  );
-  const [panoramaList, setPanoramaList] = useState<string[]>([]); // List of panorama paths
-  const [aframeLoaded, setAframeLoaded] = useState(false); // Track if A-Frame script is loaded
-  const sceneRef = useRef<HTMLDivElement>(null); // Ref for the A-Frame scene container
+const VrSceneBox = ({ panoramaPath }: VrSceneBoxProps) => {
+  const [aframeLoaded, setAframeLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isRotating, setIsRotating] = useState(true);
+  const [fov, setFov] = useState(80);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const cameraRef = useRef<HTMLElement | null>(null);
+  const sceneInstanceRef = useRef<AFrameScene | null>(null);
 
-  // Load A-Frame script dynamically
   useEffect(() => {
+    const existingScript = document.querySelector(
+      'script[src="https://aframe.io/releases/1.5.0/aframe.min.js"]'
+    );
+
+    if (existingScript && window.AFRAME) {
+      setAframeLoaded(true);
+      return;
+    }
+
     const script = document.createElement("script");
-    script.src = "https://aframe.io/releases/1.4.2/aframe.min.js";
+    script.src = "https://aframe.io/releases/1.5.0/aframe.min.js";
     script.async = true;
-    script.onload = () => setAframeLoaded(true);
-    document.body.appendChild(script);
+    script.onload = () => {
+      console.log("A-Frame loaded successfully");
+      setAframeLoaded(true);
+    };
+    script.onerror = () => console.error("Failed to load A-Frame script");
+    document.head.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 
-  // Fetch panorama list on mount
   useEffect(() => {
-    const fetchPanoramas = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/list-panoramas");
-        if (!response.ok) {
-          throw new Error(`Failed to fetch panoramas: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.success && data.panoramas.length > 0) {
-          setPanoramaList(data.panoramas);
-          // Set the first panorama as the default if no initialPanoramaPath is provided
-          if (!initialPanoramaPath) {
-            setPanoramaPath(data.panoramas[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching panoramas:", error);
-      }
-    };
+    if (panoramaPath) {
+      const imageUrl = `http://localhost:8000${panoramaPath}`;
+      console.log("Validating image URL:", imageUrl);
+      const img = new Image();
+      img.src = imageUrl;
+      img.onload = () => {
+        console.log("Image loaded successfully:", imageUrl);
+        setImageError(false);
+      };
+      img.onerror = (error) => {
+        console.error("Failed to load image:", imageUrl, error);
+        setImageError(true);
+      };
+    } else {
+      console.warn("No panoramaPath provided");
+    }
+  }, [panoramaPath]);
 
-    fetchPanoramas();
-  }, [initialPanoramaPath]);
-
-  // Initialize the A-Frame scene and auto-rotation
   useEffect(() => {
-    if (!aframeLoaded || !sceneRef.current) return;
+    if (!aframeLoaded || !sceneRef.current || !panoramaPath || imageError) {
+      if (!panoramaPath) console.warn("Panorama path is undefined");
+      if (!window.AFRAME) console.warn("A-Frame not available");
+      if (imageError) console.warn("Image failed to load");
+      return;
+    }
 
-    // Create the A-Frame scene
-    const scene = document.createElement("a-scene");
-    scene.setAttribute("id", "panorama");
+    console.log("Rendering A-Frame scene with panorama:", panoramaPath);
+    const scene = document.createElement("a-scene") as AFrameScene;
     scene.setAttribute("embedded", "");
     scene.setAttribute("vr-mode-ui", "enabled: true");
+    sceneInstanceRef.current = scene;
 
-    // Create the camera rig
     const cameraRig = document.createElement("a-entity");
     cameraRig.setAttribute("id", "cameraRig");
     cameraRig.setAttribute("rotation", "0 0 0");
 
-    // Create the camera
     const camera = document.createElement("a-camera");
     camera.setAttribute("wasd-controls-enabled", "false");
     camera.setAttribute("look-controls", "enabled: true");
+    camera.setAttribute("fov", fov.toString());
     cameraRig.appendChild(camera);
+    cameraRef.current = camera;
 
-    // Create the sky
     const sky = document.createElement("a-sky");
     sky.setAttribute("id", "sky");
     sky.setAttribute("rotation", "0 -90 0");
-    if (panoramaPath) {
-      sky.setAttribute("src", `http://localhost:8000${panoramaPath}`);
-    }
-
-    // Append elements to the scene
+    sky.setAttribute("src", `http://localhost:8000${panoramaPath}`);
     scene.appendChild(cameraRig);
     scene.appendChild(sky);
+
     sceneRef.current.appendChild(scene);
 
-    // Auto-rotate the camera rig
+    const stopRotationOnClick = () => {
+      setIsRotating(false);
+    };
+    scene.addEventListener("click", stopRotationOnClick);
+
     let angle = 0;
+    let animationFrameId: number;
+
     const rotate = () => {
-      angle += 0.1; // Adjust speed here (smaller is slower)
-      cameraRig.setAttribute("rotation", `0 ${angle} 0`);
-      requestAnimationFrame(rotate);
+      if (isRotating) {
+        angle += 0.05;
+        cameraRig.setAttribute("rotation", `0 ${angle} 0`);
+      }
+      animationFrameId = requestAnimationFrame(rotate);
     };
     rotate();
 
-    // Update the sky when panoramaPath changes
-    const updateSky = () => {
-      sky.setAttribute("src", `http://localhost:8000${panoramaPath}`);
-    };
-    if (panoramaPath) updateSky();
-
-    // Cleanup on unmount
     return () => {
-      sceneRef.current?.removeChild(scene);
+      scene.removeEventListener("click", stopRotationOnClick);
+      cancelAnimationFrame(animationFrameId);
+      if (sceneRef.current?.contains(scene)) {
+        sceneRef.current.removeChild(scene);
+      }
     };
-  }, [aframeLoaded, panoramaPath]);
+  }, [aframeLoaded, panoramaPath, imageError, isRotating]);
 
-  // Handle image uploads
-  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const files = (form.querySelector("#image-upload") as HTMLInputElement)
-      .files;
-
-    if (!files || files.length < 1) {
-      alert("Please select at least one image.");
-      return;
+  useEffect(() => {
+    if (cameraRef.current) {
+      cameraRef.current.setAttribute("fov", fov.toString());
     }
+  }, [fov]);
 
-    try {
-      const response = await fetch("http://localhost:8000/upload", {
-        method: "POST",
-        body: formData,
-      });
+  const handleCopyLink = () => {
+    if (!panoramaPath) return alert("No panorama path available");
+    const fullLink = `http://localhost:8000${panoramaPath}`;
+    navigator.clipboard.writeText(fullLink).then(() => {
+      alert("Link copied to clipboard!");
+    });
+  };
 
-      if (!response.ok) {
-        const errorText = await response.json().catch(() => response.text());
-        throw new Error(
-          `Server responded with ${response.status}: ${errorText}`
-        );
-      }
+  const toggleRotation = () => {
+    setIsRotating((prev) => !prev);
+  };
 
-      const result = await response.json();
-      if (result.success) {
-        setPanoramaPath(result.panorama_path);
-        setPanoramaList((prev) => [...prev, result.panorama_path]);
-      } else {
-        alert("Error: " + (result.error || "Unknown error"));
+  const zoomIn = () => {
+    setFov((prev) => Math.max(20, prev - 5));
+  };
+
+  const zoomOut = () => {
+    setFov((prev) => Math.min(120, prev + 5));
+  };
+
+  const resetView = () => {
+    if (cameraRef.current) {
+      setFov(80);
+      const cameraRig = cameraRef.current.parentElement;
+      if (cameraRig) {
+        cameraRig.setAttribute("rotation", "0 0 0");
       }
-    } catch (error) {
-      console.error("Upload error:", error);
-      if (error instanceof Error) {
-        alert(`Upload failed: ${error.message}`);
-      } else {
-        alert("Upload failed: An unknown error occurred");
-      }
+      setIsRotating(true);
     }
   };
 
-  // Handle copying the shareable link
-  const handleCopyLink = () => {
-    if (panoramaPath) {
-      const link = `http://localhost:8000${panoramaPath}`;
-      navigator.clipboard.writeText(link).then(() => {
-        alert("Link copied to clipboard!");
-      });
+  const toggleVRMode = () => {
+    if (sceneInstanceRef.current) {
+      if (sceneInstanceRef.current.is("vr-mode")) {
+        sceneInstanceRef.current.exitVR();
+      } else {
+        sceneInstanceRef.current.enterVR();
+      }
     }
   };
 
   return (
-    <>
-      <Container
-        maxWidth="sm"
-        sx={{
-          mt: 2,
-          mx: "auto",
-        }}
-      >
-        <Box>
-          <Chip
-            sx={{ m: 2 }}
-            color="success"
-            variant="soft"
-            startDecorator={<ViewInArIcon />}
-          >
-            VR Image
-          </Chip>
-          <div>
-            <h2>Processed VR Image</h2>
-            {aframeLoaded ? (
-              <div
-                ref={sceneRef}
-                style={{
-                  width: "100%",
-                  height: "70vh",
-                  maxWidth: "1200px",
-                  marginBottom: "20px",
-                }}
-              />
-            ) : (
-              <p>Loading VR scene...</p>
-            )}
-          </div>
-        </Box>
-
-        {/* Upload section */}
-        <Box sx={{ textAlign: "center", my: 2 }}>
-          <h2>Upload Images to Create VR Panorama</h2>
-          <form id="upload-form" onSubmit={handleUpload}>
-            <input
-              type="file"
-              id="image-upload"
-              name="images"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              style={{ margin: "10px" }}
+    <Container sx={{ mt: 2, mx: "auto", maxWidth: "1300px" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
+        <Chip sx={{ m: 2 }} color="success" variant="soft" startDecorator={<ViewInArIcon />}>
+          VR Scene
+        </Chip>
+        <h2>Processed VR Scene</h2>
+        {!aframeLoaded ? (
+          <p>Loading VR scene...</p>
+        ) : !panoramaPath ? (
+          <p>No panorama image available. Please upload an image from the home page.</p>
+        ) : imageError ? (
+          <p>
+            Failed to load panorama image: {`http://localhost:8000${panoramaPath}`}. Check the backend server and image path.
+          </p>
+        ) : (
+          <>
+            <div
+              ref={sceneRef}
+              style={{
+                width: "100%",
+                height: "80vh",
+                maxWidth: "1300px",
+                margin: "0 auto",
+                marginBottom: "20px",
+              }}
             />
-            <br />
-            <Button type="submit">Create and Display VR Panorama</Button>
-          </form>
-        </Box>
-
-        {/* Image selector */}
-        <Box sx={{ textAlign: "center", my: 2 }}>
-          <h2>Previously Created Panoramas</h2>
-          {panoramaList.length > 0 ? (
-            panoramaList.map((path, index) => (
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: "center", mb: 2 }}>
               <Button
-                key={path}
-                onClick={() => setPanoramaPath(path)}
-                sx={{ m: 1 }}
+                startDecorator={isRotating ? <PauseIcon /> : <PlayArrowIcon />}
+                onClick={toggleRotation}
               >
-                Panorama {index + 1}
+                {isRotating ? "Pause Rotation" : "Resume Rotation"}
               </Button>
-            ))
-          ) : (
-            <p>No panoramas available.</p>
-          )}
-        </Box>
-
-        <Grid container spacing={2} sx={{ mt: 2, mx: "auto" }}>
-          <Grid xs={4}>
-            <ListItem>
-              <Button startDecorator={<HeadsetMicIcon />}>
-                Open in HeadSet
+              <Button startDecorator={<ZoomInIcon />} onClick={zoomIn}>
+                Zoom In
               </Button>
-            </ListItem>
-          </Grid>
-          <Grid xs={4}>
-            <ListItem>
-              <Button
-                startDecorator={<FileCopyIcon />}
-                onClick={handleCopyLink}
-              >
-                Copy Shareable Link
+              <Button startDecorator={<ZoomOutIcon />} onClick={zoomOut}>
+                Zoom Out
               </Button>
-            </ListItem>
-          </Grid>
-          <Grid xs={4}>
-            <ListItem>
-              <Button startDecorator={<RoofingIcon />}>
-                Back to My Scenes
+              <Button startDecorator={<RestartAltIcon />} onClick={resetView}>
+                Reset View
               </Button>
-            </ListItem>
-          </Grid>
-        </Grid>
-      </Container>
-    </>
+              <Button startDecorator={<ThreeDRotationIcon />} onClick={toggleVRMode}>
+                Toggle VR Mode
+              </Button>
+            </Box>
+          </>
+        )}
+        {panoramaPath && !imageError && (
+          <Box sx={{ textAlign: "center", my: 2 }}>
+            <Button startDecorator={<FileCopyIcon />} onClick={handleCopyLink}>
+              Copy Shareable Link
+            </Button>
+          </Box>
+        )}
+      </Box>
+    </Container>
   );
 };
 

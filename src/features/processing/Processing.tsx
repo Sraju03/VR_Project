@@ -1,16 +1,20 @@
-// import Typography from "@mui/material/Typography";
+import { useLocation } from "react-router-dom";
 import { Typography } from "@mui/joy";
 import { Back } from "../../components/Back";
 import Container from "@mui/material/Container";
 import Navbar from "../../components/Navbar";
-import UploadTable from "../../components/TableVariant";
-import { Paper } from "@mui/material";
+import TableVariant from "../../components/TableVariant";
 
-// import UploadStatus from "../../components/UploadStatus";
-
-// import { VrSceneBox } from "../../components/VrSceneBox";
+type UploadedImage = {
+  image: string;
+  fileName: string;
+  chipLabel: string;
+};
 
 const Processing = () => {
+  const { state } = useLocation();
+  const uploadedImages: UploadedImage[] = state?.uploadedImages || [];
+
   return (
     <>
       <Navbar />
@@ -26,17 +30,8 @@ const Processing = () => {
         </Typography>
       </div>
 
-      {/* <UploadStatus filename="Living Room.jpg" delay={3000} /> */}
-
-      <Container
-        maxWidth="md"
-        sx={{
-          width: "fit-content",
-        }}
-      >
-        <Paper elevation={16} className="w-2xl mx-auto ">
-          <UploadTable />
-        </Paper>
+      <Container maxWidth="md" sx={{ width: "fit-content" }}>
+        <TableVariant uploadedImages={uploadedImages} />
       </Container>
     </>
   );
