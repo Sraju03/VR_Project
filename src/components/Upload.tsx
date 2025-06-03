@@ -14,19 +14,22 @@ interface UploadProps {
 
 const Upload = ({ onUpload }: UploadProps) => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    debugger
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      onUpload({
-        image: reader.result as string,
-        fileName: file.name,
-        chipLabel: file.type.includes("image") ? "Image" : "Video",
-      });
-    };
-    reader.readAsDataURL(file);
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        onUpload({
+          image: reader.result as string,
+          fileName: file.name,
+          chipLabel: file.type.includes("image") ? "Image" : "Video",
+        });
+      };
+
+      reader.readAsDataURL(file);
+    });
   };
 
   return (
@@ -51,11 +54,11 @@ const Upload = ({ onUpload }: UploadProps) => {
               tabIndex={-1}
               variant="outlined"
               color="neutral"
-              sx={{ backgroundColor: "#004b93", color: "#fff" }}
+              sx={{ backgroundColor: "#004b93", color: "#fff"  }}
             >
               <UploadFileIcon className="mr-1.5" />
               Upload a file
-              <input type="file"  multiple hidden onChange={handleFileChange} />
+              <input type="file" multiple hidden onChange={handleFileChange} />
             </Button>
           </div>
         </Box>

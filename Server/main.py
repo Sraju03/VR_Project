@@ -33,9 +33,9 @@ app.add_middleware(
 )
 
 # Directories
-static_dir = Path(r"C:\Users\Prasannakumar\Desktop\VR_Project\Server\static")
-results_dir = Path(r"C:\Users\Prasannakumar\Desktop\VR_Project\Server\results")
-gmic_dir = Path(r"C:\Users\Prasannakumar\Desktop\VR_Project\Server\gmic")
+static_dir = Path(r"C:\vrversion-1\vr-app-1\Server\static")
+results_dir = Path(r"C:\vrversion-1\vr-app-1\Server\results")
+gmic_dir = Path(r"C:\vrversion-1\vr-app-1\Server\gmic")
 static_dir.mkdir(parents=True, exist_ok=True)
 results_dir.mkdir(parents=True, exist_ok=True)
 gmic_dir.mkdir(parents=True, exist_ok=True)
@@ -51,7 +51,7 @@ if not gmic_exe.exists():
     raise RuntimeError(f"Place gmic.exe in {gmic_exe.parent}")
 
 # Exiftool full path
-EXIFTOOL_PATH = r"C:\Users\Prasannakumar\Desktop\VR_Project\Server\exiftool-13.30_64\exiftool.exe"
+EXIFTOOL_PATH = r"C:\vrversion-1\vr-app-1\Server\exiftool-13.30_64\exiftool.exe"
 
 # Enhance image using G'MIC
 def enhance_image(img):
