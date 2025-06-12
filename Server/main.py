@@ -32,26 +32,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Directories
-static_dir = Path(r"C:\vrversion-1\vr-app-1\Server\static")
-results_dir = Path(r"C:\vrversion-1\vr-app-1\Server\results")
-gmic_dir = Path(r"C:\vrversion-1\vr-app-1\Server\gmic")
+# Define base directory dynamically (relative to main.py)
+BASE_DIR = Path(__file__).resolve().parent
+static_dir = BASE_DIR / "static"
+results_dir = BASE_DIR / "results"
+
+
+# Create directories if they don't exist
 static_dir.mkdir(parents=True, exist_ok=True)
 results_dir.mkdir(parents=True, exist_ok=True)
-gmic_dir.mkdir(parents=True, exist_ok=True)
+
 
 # Mount static directories
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 app.mount("/results", StaticFiles(directory=str(results_dir)), name="results")
 
 # G'MIC executable path
-gmic_exe = gmic_dir / "gmic.exe"
+gmic_exe =  "/usr/bin/gmic"
 if not gmic_exe.exists():
     logging.error(f"G'MIC executable not found at {gmic_exe}")
-    raise RuntimeError(f"Place gmic.exe in {gmic_exe.parent}")
+    raise RuntimeError(f"Place gmic executable in {gmic_exe.parent}")
 
-# Exiftool full path
-EXIFTOOL_PATH = r"C:\vrversion-1\vr-app-1\Server\exiftool-13.30_64\exiftool.exe"
+# Exiftool path
+EXIFTOOL_PATH = "/usr/bin/exiftool"
+if not Path(EXIFTOOL_PATH).exists():
+    logging.error(f"Exiftool not found at {EXIFTOOL_PATH}")
+    raise RuntimeError(f"Install exiftool on the server (e.g., sudo apt install exiftool)")
 
 # Enhance image using G'MIC
 def enhance_image(img):
@@ -191,7 +197,7 @@ async def upload_images(images: List[UploadFile] = File(...)):
                 f.write(content)
             uploaded_paths.append(file_path)
 
-        output_filename = f"vr_panorama_{uuid.uuid4().hex}.jpg"  # Use .jpg to support exiftool metadata
+        output_filename = f"vr_panorama_{uuid.uuid4().hex}.jpg"
         output_path = results_dir / output_filename
 
         if len(uploaded_paths) == 1:
@@ -211,20 +217,7 @@ async def upload_images(images: List[UploadFile] = File(...)):
         logging.error(f"Upload failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# New endpoint to list panoramas in the results folder
-@app.get("/list-panoramas")
-async def list_panoramas():
-    try:
-        # List files in the results directory
-        panorama_files = [
-            f"/results/{file.name}"
-            for file in results_dir.iterdir()
-            if file.is_file() and file.name.startswith("vr_panorama_") and file.suffix.lower() == ".jpg"
-        ]
-        return {"success": True, "panoramas": panorama_files}
-    except Exception as e:
-        logging.error(f"Failed to list panoramas: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
