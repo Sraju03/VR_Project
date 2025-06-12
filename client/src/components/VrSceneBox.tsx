@@ -65,7 +65,7 @@ const VrSceneBox = ({ panoramaPath }: VrSceneBoxProps) => {
 
   useEffect(() => {
     if (panoramaPath) {
-      const imageUrl = `http://localhost:8000${panoramaPath}`;
+      const imageUrl = `http://144.126.253.174:8000${panoramaPath}`;
       console.log("Validating image URL:", imageUrl);
       const img = new Image();
       img.src = imageUrl;
