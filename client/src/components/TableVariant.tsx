@@ -59,7 +59,7 @@ export default function TableVariant({ uploadedImages }: UploadTableProps) {
       try {
         const controller = new AbortController();
         setVrProcessing(true); // Start VR processing
-        const response = await fetch("http://144.126.253.174:8000/upload", {
+        const response = await fetch("http://localhost:8000/upload", {
           method: "POST",
           body: formData,
           signal: controller.signal,

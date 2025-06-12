@@ -24,6 +24,7 @@
     "lib-utils": "^0.0.4",
     "lib-utils-ts": "^0.0.0-test",
     "lucide-react": "^0.511.0",
+    "pannellum": "^2.5.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-drag-reorder": "^1.2.0",

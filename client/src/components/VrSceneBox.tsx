@@ -65,7 +65,7 @@ const VrSceneBox = ({ panoramaPath }: VrSceneBoxProps) => {
 
   useEffect(() => {
     if (panoramaPath) {
-      const imageUrl = `http://144.126.253.174:8000${panoramaPath}`;
+      const imageUrl = `http://localhost:8000${panoramaPath}`;
       console.log("Validating image URL:", imageUrl);
       const img = new Image();
       img.src = imageUrl;
@@ -110,7 +110,7 @@ const VrSceneBox = ({ panoramaPath }: VrSceneBoxProps) => {
     const sky = document.createElement("a-sky");
     sky.setAttribute("id", "sky");
     sky.setAttribute("rotation", "0 -90 0");
-    sky.setAttribute("src", `http://144.126.253.174:8000${panoramaPath}`);
+    sky.setAttribute("src", `http://localhost:8000${panoramaPath}`);
     scene.appendChild(cameraRig);
     scene.appendChild(sky);
 
@@ -150,7 +150,7 @@ const VrSceneBox = ({ panoramaPath }: VrSceneBoxProps) => {
 
   const handleCopyLink = () => {
     if (!panoramaPath) return alert("No panorama path available");
-    const fullLink = `http://144.126.253.174:8000${panoramaPath}`;
+    const fullLink = `http://localhost:8000${panoramaPath}`;
     navigator.clipboard.writeText(fullLink).then(() => {
       alert("Link copied to clipboard!");
     });
@@ -202,7 +202,7 @@ const VrSceneBox = ({ panoramaPath }: VrSceneBoxProps) => {
           <p>No panorama image available. Please upload an image from the home page.</p>
         ) : imageError ? (
           <p>
-            Failed to load panorama image: {`http://144.126.253.174:8000${panoramaPath}`}. Check the backend server and image path.
+            Failed to load panorama image: {`http://localhost:8000${panoramaPath}`}. Check the backend server and image path.
           </p>
         ) : (
           <>
