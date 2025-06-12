@@ -37,27 +37,25 @@ BASE_DIR = Path(__file__).resolve().parent
 static_dir = BASE_DIR / "static"
 results_dir = BASE_DIR / "results"
 
-
 # Create directories if they don't exist
 static_dir.mkdir(parents=True, exist_ok=True)
 results_dir.mkdir(parents=True, exist_ok=True)
-
 
 # Mount static directories
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 app.mount("/results", StaticFiles(directory=str(results_dir)), name="results")
 
 # G'MIC executable path
-gmic_exe =  "/usr/bin/gmic"
+gmic_exe = Path("/usr/bin/gmic")
 if not gmic_exe.exists():
     logging.error(f"G'MIC executable not found at {gmic_exe}")
-    raise RuntimeError(f"Place gmic executable in {gmic_exe.parent}")
+    raise RuntimeError("Install gmic on the server (e.g., sudo apt install gmic)")
 
 # Exiftool path
 EXIFTOOL_PATH = "/usr/bin/exiftool"
 if not Path(EXIFTOOL_PATH).exists():
     logging.error(f"Exiftool not found at {EXIFTOOL_PATH}")
-    raise RuntimeError(f"Install exiftool on the server (e.g., sudo apt install exiftool)")
+    raise RuntimeError("Install exiftool on the server (e.g., sudo apt install exiftool)")
 
 # Enhance image using G'MIC
 def enhance_image(img):
@@ -216,7 +214,6 @@ async def upload_images(images: List[UploadFile] = File(...)):
     except Exception as e:
         logging.error(f"Upload failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 if __name__ == "__main__":
